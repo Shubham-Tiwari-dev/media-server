@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ media.name }} - Media Server</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://vjs.zencdn.net/8.6.1/video-js.css" rel="stylesheet">
+    <style>
+        body { 
+            background: #0d1117; 
+            color: #f0f6fc; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding-top: 70px;
+        }
+        .navbar { 
+            background: #161b22 !important; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            background: #000;
+            border-radius: 10px;
+        }
+        .video-js {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .embedded-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 10px;
+        }
+        .media-info {
+            background: #21262d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .media-poster {
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 100%;
+            height: auto;
+        }
+        .cast-member {
+            display: inline-block;
+            background: #30363d;
+            border-radius: 20px;
+            padding: 5px 15px;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .tag-badge {
+            background-color: #58a6ff;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        .rating {
+            color: #f0f6fc;
+            background: #21262d;
+            border-radius: 5px;
+            padding: 5px 10px;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .rating i {
+            color: #ffd700;
+        }
+        .seasons-container {
+            margin-top: 20px;
+        }
+        .season-tab {
+            background: #30363d;
+            border: none;
+            color: #f0f6fc;
+            padding: 10px 20px;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+            cursor: pointer;
+        }
+        .season-tab.active {
+            background: #58a6ff;
+        }
+        .episodes-list {
+            background: #21262d;
+            border-radius: 0 10px 10px 10px;
+            padding: 15px;
+        }
+        .episode-item {
+            padding: 10px;
+            border-bottom: 1px solid #30363d;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .episode-item:hover {
+            background: #30363d;
+        }
+        .episode-item:last-child {
+            border-bottom: none;
+        }
+        .episode-number {
+            font-weight: bold;
+            color: #58a6ff;
+        }
+        .trailer-btn {
+            margin-top: 15px;
+        }
+        @media (max-width: 768px) {
+            .media-poster {
+                max-height: 300px;
+                margin: 0 auto;
+                display: block;
+            }
+            .media-info {
+                margin-top: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="bi bi-arrow-left"></i> Back to Home
+            </a>
+            <div>
+                <span class="me-3">Welcome, {{ session.username }}!</span>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">Logout</a>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8">
+                {% if media.type == 'series' %}
+                <div class="seasons-container">
+                    <div class="d-flex">
+                        {% for season in media.seasons %}
+                        <button class="season-tab {% if loop.first %}active{% endif %}" onclick="showSeason({{ loop.index0 }})">
+                            Season {{ season.season_number }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    
+                    {% for season in media.seasons %}
+                    <div class="episodes-list" id="season-{{ loop.index0 }}" {% if not loop.first %}style="display:none"{% endif %}>
+                        {% for episode in season.episodes %}
+                        <div class="episode-item" onclick="playEpisode('{{ episode.url }}', '{{ episode.title }}')">
+                            <span class="episode-number">S{{ season.season_number }}E{{ episode.episode_number }}</span> - {{ episode.title }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="video-container mt-3" id="videoContainer">
+                    {% if media.get('use_embedded_link', False) and settings.use_videojs_for_embedded %}
+                    <video
+                        id="video-player"
+                        class="video-js vjs-default-skin"
+                        controls
+                        preload="auto"
+                        data-setup='{}'
+                        poster="{{ media.poster }}"
+                    >
+                        <source src="" type="video/mp4" />
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript, and consider upgrading to a web browser that
+                            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>.
+                        </p>
+                    </video>
+                    {% elif media.get('use_embedded_link', False) %}
+                    <iframe id="embeddedPlayer" class="embedded-player" src="" frameborder="0" allowfullscreen></iframe>
+                    {% else %}
+                    <video
+                        id="video-player"
+                        class="video-js vjs-default-skin"
+                        controls
+                        preload="auto"
+                        data-setup='{}'
+                        poster="{{ media.poster }}"
+                    >
+                        <source src="" type="video/mp4" />
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript, and consider upgrading to a web browser that
+                            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>.
+                        </p>
+                    </video>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="video-container">
+                    {% if media.get('use_embedded_link', False) and settings.use_videojs_for_embedded %}
+                    <video
+                        id="video-player"
+                        class="video-js vjs-default-skin"
+                        controls
+                        preload="auto"
+                        data-setup='{}'
+                        poster="{{ media.poster }}"
+                    >
+                        <source src="{{ media.url }}" type="video/mp4" />
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript, and consider upgrading to a web browser that
+                            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>.
+                        </p>
+                    </video>
+                    {% elif media.get('use_embedded_link', False) %}
+                    <iframe class="embedded-player" src="{{ media.url }}" frameborder="0" allowfullscreen></iframe>
+                    {% else %}
+                    <video
+                        id="video-player"
+                        class="video-js vjs-default-skin"
+                        controls
+                        preload="auto"
+                        data-setup='{}'
+                        poster="{{ media.poster }}"
+                    >
+                        <source src="{{ media.url }}" type="video/mp4" />
+                        <p class="vjs-no-js">
+                            To view this video please enable JavaScript, and consider upgrading to a web browser that
+                            <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>.
+                        </p>
+                    </video>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                {% if media.trailer %}
+                <div class="trailer-btn">
+                    <a href="{{ media.trailer }}" target="_blank" class="btn btn-danger">
+                        <i class="bi bi-play-circle"></i> Watch Trailer
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-lg-4 mt-4 mt-lg-0">
+                <div class="media-info">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h2>{{ media.name }}</h2>
+                        <div>
+                            <span class="tag-badge">{{ media.tag }}</span>
+                            <span class="rating"><i class="bi bi-star-fill"></i> {{ media.rating }}</span>
+                        </div>
+                    </div>
+                    <p class="text-muted">{{ media.year }}</p>
+                    
+                    <div class="mt-4">
+                        <h5>Cast</h5>
+                        <div>
+                            {% for actor in media.cast %}
+                                <span class="cast-member">{{ actor }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <img src="{{ media.poster }}" class="media-poster" alt="{{ media.name }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://vjs.zencdn.net/8.6.1/video.min.js"></script>
+    <script>
+        // Initialize Video.js player only if not using embedded link or if Video.js for embedded is enabled
+        let player;
+        {% if not media.get('use_embedded_link', False) or settings.use_videojs_for_embedded %}
+        player = videojs('video-player', {
+            fluid: true,
+            responsive: true,
+            playbackRates: [0.5, 1, 1.25, 1.5, 2],
+            controls: true,
+            preload: 'auto'
+        });
+        
+        // Track activity when video starts playing
+        player.on('play', function() {
+            fetch('/track-activity', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({media_id: '{{ media_id }}', action: 'play'})
+            });
+        });
+        
+        // Send heartbeat every 30 seconds to track active viewing
+        setInterval(function() {
+            if (!player.paused()) {
+                fetch('/track-activity', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({media_id: '{{ media_id }}', action: 'viewing'})
+                });
+            }
+        }, 30000);
+        {% endif %}
+        
+        // Series-specific functions
+        function showSeason(index) {
+            // Hide all seasons
+            document.querySelectorAll('.episodes-list').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.season-tab').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show selected season
+            document.getElementById(`season-${index}`).style.display = 'block';
+            
+            // Add active class to selected tab
+            document.querySelectorAll('.season-tab')[index].classList.add('active');
+        }
+        
+        function playEpisode(url, title) {
+            // Check if using embedded link and Video.js is enabled for embedded
+            {% if media.get('use_embedded_link', False) and settings.use_videojs_for_embedded %}
+            // Use Video.js player
+            player.src({ src: url, type: 'video/mp4' });
+            player.play();
+            {% elif media.get('use_embedded_link', False) %}
+            // Use embedded player
+            const embeddedPlayer = document.getElementById('embeddedPlayer');
+            embeddedPlayer.src = url;
+            {% else %}
+            // Use Video.js player
+            player.src({ src: url, type: 'video/mp4' });
+            player.play();
+            {% endif %}
+            
+            // Update the title in the media info
+            document.querySelector('.media-info h2').textContent = title;
+            
+            // Track activity
+            fetch('/track-activity', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({media_id: '{{ media_id }}', action: 'play', episode: title})
+            });
+        }
+    </script>
+</body>
+</html>

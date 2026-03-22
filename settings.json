@@ -1,0 +1,20 @@
+{
+  "theme": "darkTheme",
+  "registration_enabled": true,
+  "contact_support_enabled": true,
+  "smtp": {
+    "enabled": false,
+    "host": "",
+    "port": 587,
+    "use_tls": true,
+    "username": "",
+    "password": "",
+    "from_email": ""
+  },
+  "dns": "default",
+  "caching_enabled": true,
+  "use_embedded_links": false,
+  "use_videojs_for_embedded": false,
+  "tmdb_api_enabled": true,
+  "tmdb_api_key": "2a8a74a31eaac95133552ff47cd913ae"
+}
