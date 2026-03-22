@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+    <style>
+        body { 
+            background: #0d1117; 
+            color: #f0f6fc; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background: #161b22;
+            min-height: 100vh;
+            padding: 20px 0;
+            border-right: 1px solid #30363d;
+        }
+        .sidebar-item {
+            padding: 15px 20px;
+            cursor: pointer;
+            border-bottom: 1px solid #21262d;
+            display: flex;
+            align-items: center;
+        }
+        .sidebar-item:hover, .sidebar-item.active {
+            background: #21262d;
+            color: #58a6ff;
+        }
+        .sidebar-item i {
+            margin-right: 10px;
+        }
+        .main-content { 
+            padding: 20px; 
+        }
+        .stats-card {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .stats-number { 
+            font-size: 2rem; 
+            font-weight: bold; 
+            color: #58a6ff; 
+        }
+        .content-section { 
+            display: none; 
+        }
+        .content-section.active { 
+            display: block; 
+        }
+        .table {
+            background: #21262d;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .table thead th {
+            border-bottom: 2px solid #30363d;
+        }
+        .table td, .table th {
+            border-color: #30363d;
+        }
+        .btn-action {
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+        .user-status {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-active {
+            background-color: #28a745;
+            box-shadow: 0 0 5px #28a745;
+        }
+        .status-inactive {
+            background-color: #dc3545;
+        }
+        .activity-item {
+            background: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #58a6ff;
+        }
+        .activity-time {
+            font-size: 12px;
+            color: #8b949e;
+        }
+        .support-request {
+            background: #21262d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #fd7e14;
+        }
+        .request-time {
+            font-size: 12px;
+            color: #8b949e;
+        }
+        .form-switch {
+            padding-left: 3rem;
+        }
+        .form-switch .form-check-input {
+            width: 3rem;
+            height: 1.5rem;
+            margin-left: -3rem;
+        }
+        .seasons-episodes-container {
+            background: #21262d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .season-item {
+            background: #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .episode-item {
+            background: #21262d;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .episode-item:last-child {
+            margin-bottom: 0;
+        }
+        .poster-cropper-container {
+            max-height: 400px;
+            width: 100%;
+        }
+        
+        /* Notification styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .notification.success {
+            background-color: #28a745;
+        }
+        .notification.error {
+            background-color: #dc3545;
+        }
+        .notification.info {
+            background-color: #17a2b8;
+        }
+        
+        /* Loading spinner */
+        .fetching-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            color: white;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            margin-bottom: 1rem;
+        }
+        .fetching-message {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .fetching-progress {
+            font-size: 1rem;
+            color: #ccc;
+        }
+        
+        /* Light theme styles */
+        body.light-theme { 
+            background: #f8f9fa; 
+            color: #212529; 
+        }
+        body.light-theme .navbar { 
+            background: #ffffff !important; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        body.light-theme .sidebar {
+            background: #f1f3f5;
+            border-right: 1px solid #dee2e6;
+        }
+        body.light-theme .sidebar-item:hover, 
+        body.light-theme .sidebar-item.active {
+            background: #e9ecef;
+            color: #0d6efd;
+        }
+        body.light-theme .stats-card,
+        body.light-theme .table,
+        body.light-theme .media-card,
+        body.light-theme .modal-content,
+        body.light-theme .activity-item,
+        body.light-theme .support-request,
+        body.light-theme .seasons-episodes-container,
+        body.light-theme .season-item,
+        body.light-theme .episode-item {
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            color: #212529;
+        }
+        body.light-theme .table thead th {
+            border-bottom: 2px solid #dee2e6;
+        }
+        body.light-theme .table td, .body.light-theme .table th {
+            border-color: #dee2e6;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 992px) {
+            .sidebar {
+                min-height: auto;
+                padding: 10px 0;
+                border-right: none;
+                border-bottom: 1px solid #30363d;
+            }
+            .sidebar-item {
+                display: inline-block;
+                padding: 10px 15px;
+                border-bottom: none;
+                border-right: 1px solid #21262d;
+            }
+            .stats-card {
+                margin-bottom: 15px;
+            }
+        }
+        @media (max-width: 768px) {
+            .sidebar-item {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+            .sidebar-item span {
+                display: none;
+            }
+            .stats-number {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Embedded link toggle styles */
+        .embedded-toggle {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .embedded-toggle .form-check-input {
+            margin-right: 10px;
+        }
+        
+        /* TMDB Search Styles */
+        .tmdb-search-results {
+            max-height: 300px;
+            overflow-y: auto;
+            background: #21262d;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .tmdb-result-item {
+            padding: 10px;
+            border-bottom: 1px solid #30363d;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .tmdb-result-item:hover {
+            background: #30363d;
+        }
+        .tmdb-result-item:last-child {
+            border-bottom: none;
+        }
+        .tmdb-result-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .tmdb-result-overview {
+            font-size: 0.9rem;
+            color: #8b949e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* TV Show Search Button */
+        .tv-show-search-container {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .tv-show-search-container input {
+            flex-grow: 1;
+            margin-right: 10px;
+        }
+        
+        /* Custom Poster URL Upload */
+        .poster-url-upload {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #30363d;
+        }
+        .poster-url-preview {
+            margin-top: 10px;
+            max-width: 150px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .poster-url-preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 sidebar">
+                <h5 class="text-center mb-4">🎬 Admin Panel</h5>
+                <div class="sidebar-item active" onclick="showSection('dashboard')">
+                    <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('users')">
+                    <i class="bi bi-people"></i> <span>Users</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('media-library')">
+                    <i class="bi bi-film"></i> <span>Media Library</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('requests')">
+                    <i class="bi bi-envelope"></i> <span>Requests</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('streamtape')">
+                    <i class="bi bi-collection-play"></i> <span>Streamtape</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('settings')">
+                    <i class="bi bi-gear"></i> <span>Settings</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('smtp')">
+                    <i class="bi bi-envelope-at"></i> <span>SMTP</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('dns')">
+                    <i class="bi bi-hdd-network"></i> <span>DNS</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('caching')">
+                    <i class="bi bi-speedometer2"></i> <span>Caching</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('theme')">
+                    <i class="bi bi-palette"></i> <span>Theme</span>
+                </div>
+                <div class="sidebar-item" onclick="showSection('media-database')">
+                    <i class="bi bi-database"></i> <span>Media Database</span>
+                </div>
+                <div class="sidebar-item" onclick="window.location='/logout'">
+                    <i class="bi bi-box-arrow-right"></i> <span>Logout</span>
+                </div>
+            </div>
+            
+            <div class="col-md-9 col-lg-10 main-content">
+                <!-- Dashboard Section -->
+                <div id="dashboard" class="content-section active">
+                    <h2>Dashboard</h2>
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stats-card" onclick="showSection('media-library')">
+                                <div class="stats-number">{{ stats.total_media }}</div>
+                                <div>Total Media</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stats-card" onclick="showSection('users')">
+                                <div class="stats-number">{{ stats.total_users }}</div>
+                                <div>Total Users</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stats-card" onclick="showActiveUsers()">
+                                <div class="stats-number">{{ stats.active_users }}</div>
+                                <div>Active Users</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="stats-card">
+                                <div class="stats-number">{{ stats.total_views }}</div>
+                                <div>Total Views</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h4>Live Activity</h4>
+                        <div id="liveActivity" class="mt-3"></div>
+                    </div>
+                </div>
+                
+                <!-- Users Section -->
+                <div id="users" class="content-section">
+                    <h2>Users Management</h2>
+                    <div>
+                        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                            <i class="bi bi-person-plus"></i> Create User
+                        </button>
+                        <button class="btn btn-info mb-3 ms-2" onclick="showActiveUsers()">
+                            <i class="bi bi-activity"></i> Active Users
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Created At</th>
+                                    <th>Status</th>
+                                    <th>Disabled</th>
+                                    <th>Email Verified</th>
+                                    <th>Is Admin</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                {% for username, user_data in users.items() %}
+                                <tr>
+                                    <td>{{ username }}</td>
+                                    <td>{{ user_data.get('email', 'N/A') }}</td>
+                                    <td>{{ user_data.created_at[:10] }}</td>
+                                    <td>
+                                        <span class="user-status {% if user_data.get('is_active', False) %}status-active{% else %}status-inactive{% endif %}"></span>
+                                        {% if user_data.get('is_active', False) %}Active{% else %}Inactive{% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user_data.get('disabled', False) %}
+                                            <span class="badge bg-danger">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-success">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user_data.get('email_verified', False) %}
+                                            <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ 'Yes' if user_data.is_admin else 'No' }}</td>
+                                    <td>
+                                        {% if username != 'admin' %}
+                                            <button class="btn btn-warning btn-sm btn-action me-1" onclick="toggleUserStatus('{{ username }}')">
+                                                <i class="bi bi-person-x"></i> {% if user_data.get('disabled', False) %}Enable{% else %}Disable{% endif %}
+                                            </button>
+                                            <button class="btn btn-danger btn-sm btn-action" onclick="deleteUser('{{ username }}')">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Requests Section -->
+                <div id="requests" class="content-section">
+                    <h2>Support Requests</h2>
+                    {% if settings.contact_support_enabled %}
+                        <div id="supportRequests">
+                            <!-- Populated by JavaScript -->
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> To use this feature, please turn on contact support in settings.
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Media Library Section -->
+                <div id="media-library" class="content-section">
+                    <h2>Media Library</h2>
+                    
+                    <!-- Tag Management -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h4>Manage Tags</h4>
+                            <div class="input-group">
+                                <input type="text" id="newTag" class="form-control" placeholder="New tag name">
+                                <button class="btn btn-success" onclick="createTag()">
+                                    <i class="bi bi-plus-circle"></i> Create Tag
+                                </button>
+                            </div>
+                            <div class="mt-2">
+                                {% for tag in tags %}
+                                    <span class="badge bg-secondary me-2">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Add Media -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h4>Add New Media</h4>
+                            <form id="addMediaForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Select Tag</label>
+                                        <select class="form-select" id="selectedTag" onchange="updateAddButton()">
+                                            <option value="">Select Tag</option>
+                                            {% for tag in tags %}
+                                                <option value="{{ tag }}">{{ tag }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div id="mediaForm" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label"><span id="tagLabel">Media</span> Name</label>
+                                            <input type="text" class="form-control" id="mediaName" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">Year</label>
+                                            <input type="number" class="form-control" id="mediaYear" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- TV Show Search -->
+                                    <div class="row mb-3" id="tvShowSearchRow" style="display: none;">
+                                        <div class="col-md-12">
+                                            <div class="tv-show-search-container">
+                                                <input type="text" class="form-control" id="tvShowSearchQuery" placeholder="Search TV Show on TMDB">
+                                                <button class="btn btn-primary" type="button" onclick="searchTvShow()">Search</button>
+                                            </div>
+                                            <div id="tvShowSearchResults" class="tmdb-search-results"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Embedded Link Toggle -->
+                                    <div class="embedded-toggle">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="useEmbeddedLink">
+                                            <label class="form-check-label" for="useEmbeddedLink">
+                                                Use Embedded Link
+                                            </label>
+                                        </div>
+                                        <small class="text-muted ms-2">Enable for direct embedded players</small>
+                                    </div>
+                                    
+                                    <div id="seriesOptions" style="display: none;">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">Number of Seasons</label>
+                                                <input type="number" class="form-control" id="numSeasons" min="1" value="1">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label class="form-label">&nbsp;</label>
+                                                <button type="button" class="btn btn-primary d-block w-100" onclick="generateSeasonsForm()">Generate Seasons Form</button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="seasonsForm" class="seasons-episodes-container">
+                                            <!-- Populated by JavaScript -->
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="movieOptions">
+                                        <div class="col-12 mb-3">
+                                            <label class="form-label">URL</label>
+                                            <input type="url" class="form-control" id="mediaUrl" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">IMDB ID (Optional)</label>
+                                            <input type="text" class="form-control" id="imdbId">
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label">TMDB ID (Optional)</label>
+                                            <input type="text" class="form-control" id="tmdbId">
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary" id="addMediaBtn">
+                                        <i class="bi bi-plus-circle"></i> Add Media
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- Manage Existing Media -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h4>Manage Existing Media</h4>
+                            <div class="mb-3">
+                                <label class="form-label">Filter by Tag</label>
+                                <select class="form-select" id="filterTag" onchange="filterMedia()">
+                                    <option value="">All Media</option>
+                                    {% for tag in tags %}
+                                        <option value="{{ tag }}">{{ tag }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-dark table-hover" id="mediaTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Poster</th>
+                                            <th>Name</th>
+                                            <th>Year</th>
+                                            <th>Tag</th>
+                                            <th>Type</th>
+                                            <th>Embedded</th>
+                                            <th>Streamtape</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mediaTableBody">
+                                        {% for media_id, media in media_data.items() %}
+                                        <tr data-tag="{{ media.tag }}" data-media-id="{{ media_id }}">
+                                            <td>
+                                                <img src="{{ media.poster }}" alt="{{ media.name }}" 
+                                                     style="width: 50px; height: 75px; object-fit: cover; border-radius: 5px;">
+                                            </td>
+                                            <td>{{ media.name }}</td>
+                                            <td>{{ media.year }}</td>
+                                            <td><span class="badge bg-primary">{{ media.tag }}</span></td>
+                                            <td>
+                                                {% if media.type == 'series' %}
+                                                    <span class="badge bg-info">TV Show</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Movie</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if media.get('use_embedded_link', False) %}
+                                                    <span class="badge bg-success">Yes</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">No</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if media.is_streamtape %}
+                                                    <span class="badge bg-success">Yes</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">No</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-warning btn-sm me-1 btn-action" 
+                                                        onclick="editMedia('{{ media_id }}')">
+                                                    <i class="bi bi-pencil"></i> Edit
+                                                </button>
+                                                <button class="btn btn-danger btn-sm btn-action" 
+                                                        onclick="deleteMedia('{{ media_id }}', '{{ media.name }}')">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Streamtape Section -->
+                <div id="streamtape" class="content-section">
+                    <h2>Streamtape Configuration</h2>
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">API Username</label>
+                            <input type="text" class="form-control" value="{{ streamtape_user }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">API Key</label>
+                            <input type="password" class="form-control" value="{{ streamtape_key }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Configuration
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Settings Section -->
+                <div id="settings" class="content-section">
+                    <h2>Settings</h2>
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Current Username</label>
+                            <input type="text" class="form-control" value="admin" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">New Password</label>
+                            <input type="password" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Update Password
+                        </button>
+                    </form>
+                    
+                    <hr>
+                    
+                    <h4>System Settings</h4>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="registrationEnabled" {% if settings.registration_enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="registrationEnabled">
+                                Enable User Registration
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="contactSupportEnabled" {% if settings.contact_support_enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="contactSupportEnabled">
+                                Enable Contact Support for Disabled Accounts
+                            </label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveSystemSettings()">
+                        <i class="bi bi-save"></i> Save Settings
+                    </button>
+                </div>
+                
+                <!-- SMTP Section -->
+                <div id="smtp" class="content-section">
+                    <h2>SMTP Configuration</h2>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="smtpEnabled" {% if settings.smtp.enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="smtpEnabled">
+                                Enable Email Verification for New Registrations
+                            </label>
+                        </div>
+                    </div>
+                    <div id="smtpConfig" {% if not settings.smtp.enabled %}style="display: none;"{% endif %}>
+                        <div class="mb-3">
+                            <label class="form-label">SMTP Host</label>
+                            <input type="text" class="form-control" id="smtpHost" value="{{ settings.smtp.host }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">SMTP Port</label>
+                            <input type="number" class="form-control" id="smtpPort" value="{{ settings.smtp.port }}">
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="smtpUseTLS" {% if settings.smtp.use_tls %}checked{% endif %}>
+                                <label class="form-check-label" for="smtpUseTLS">
+                                    Use TLS
+                                </label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">SMTP Username</label>
+                            <input type="text" class="form-control" id="smtpUsername" value="{{ settings.smtp.username }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">SMTP Password</label>
+                            <input type="password" class="form-control" id="smtpPassword" value="{{ settings.smtp.password }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">From Email</label>
+                            <input type="email" class="form-control" id="smtpFromEmail" value="{{ settings.smtp.from_email }}">
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveSmtpSettings()">Save SMTP Settings</button>
+                </div>
+                
+                <!-- DNS Section -->
+                <div id="dns" class="content-section">
+                    <h2>DNS Settings</h2>
+                    <div class="mb-3">
+                        <label class="form-label">Select DNS Provider</label>
+                        <select class="form-select" id="dnsSetting">
+                            <option value="default" {% if settings.dns == 'default' %}selected{% endif %}>Default System DNS</option>
+                            <option value="google" {% if settings.dns == 'google' %}selected{% endif %}>Google DNS (8.8.8.8, 8.8.4.4)</option>
+                            <option value="cloudflare" {% if settings.dns == 'cloudflare' %}selected{% endif %}>Cloudflare DNS (1.1.1.1, 1.0.0.1)</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveDnsSettings()">Save DNS Settings</button>
+                </div>
+                
+                <!-- Caching Section -->
+                <div id="caching" class="content-section">
+                    <h2>Caching Settings</h2>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="cachingEnabled" {% if settings.caching_enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="cachingEnabled">
+                                Enable Caching
+                            </label>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" onclick="saveCachingSettings()">Save Caching Settings</button>
+                </div>
+                
+                <!-- Theme Section -->
+                <div id="theme" class="content-section">
+                    <h2>Theme Settings</h2>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="theme" id="darkTheme" {% if settings.theme == 'darkTheme' %}checked{% endif %}>
+                        <label class="form-check-label" for="darkTheme">
+                            <i class="bi bi-moon-stars"></i> Dark Theme
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="theme" id="lightTheme" {% if settings.theme == 'lightTheme' %}checked{% endif %}>
+                        <label class="form-check-label" for="lightTheme">
+                            <i class="bi bi-sun"></i> Light Theme
+                        </label>
+                    </div>
+                    <button type="button" class="btn btn-primary mt-3" onclick="saveThemeSettings()">
+                        <i class="bi bi-save"></i> Save Theme
+                    </button>
+                </div>
+                
+                <!-- Media Database Section -->
+                <div id="media-database" class="content-section">
+                    <h2>Media Database</h2>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="tmdbApiEnabled" {% if settings.tmdb_api_enabled %}checked{% endif %}>
+                            <label class="form-check-label" for="tmdbApiEnabled">
+                                Use TMDB API
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="tmdbConfig" {% if not settings.tmdb_api_enabled %}style="display: none;"{% endif %}>
+                        <div class="mb-3">
+                            <label class="form-label">TMDB API Key</label>
+                            <input type="text" class="form-control" id="tmdbApiKey" value="{{ settings.tmdb_api_key }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Test TMDB API</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="tmdbTestQuery" placeholder="Enter movie title to test">
+                                <button class="btn btn-primary" type="button" onclick="testTmdbApi()">Test</button>
+                            </div>
+                            <div id="tmdbTestResult" class="mt-2"></div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-primary" onclick="saveTmdbSettings()">Save TMDB Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Create User Modal -->
+    <div class="modal fade" id="createUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create User</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createUserForm">
+                        <div class="mb-3">
+                            <label class="form-label">Username</label>
+                            <input type="text" class="form-control" id="newUsername" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" id="newPassword" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="newEmail">
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isAdmin">
+                            <label class="form-check-label" for="isAdmin">Is Admin</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="createUser()">
+                        <i class="bi bi-person-plus"></i> Create User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Media Modal -->
+    <div class="modal fade" id="editMediaModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Media</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editMediaForm">
+                        <input type="hidden" id="editMediaId">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Media Name</label>
+                                <input type="text" class="form-control" id="editMediaName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Year</label>
+                                <input type="number" class="form-control" id="editMediaYear" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tag</label>
+                                <select class="form-select" id="editMediaTag" required>
+                                    {% for tag in tags %}
+                                        <option value="{{ tag }}">{{ tag }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">URL</label>
+                                <input type="url" class="form-control" id="editMediaUrl" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">IMDB ID (Optional)</label>
+                                <input type="text" class="form-control" id="editImdbId">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">TMDB ID (Optional)</label>
+                                <input type="text" class="form-control" id="editTmdbId">
+                            </div>
+                            <div class="col-12 mb-3">
+                                <!-- Embedded Link Toggle -->
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="editUseEmbeddedLink">
+                                    <label class="form-check-label" for="editUseEmbeddedLink">
+                                        Use Embedded Link
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label">Upload Custom Poster (Optional)</label>
+                                <div class="mb-2">
+                                    <input type="file" class="form-control" id="editPosterUpload" accept="image/*">
+                                </div>
+                                <div class="poster-cropper-container mt-2" id="posterCropperContainer" style="display: none;">
+                                    <img id="posterCropperImage" src="" alt="Poster to crop">
+                                </div>
+                                
+                                <div class="poster-url-upload">
+                                    <label class="form-label">Or Upload Custom Poster via Link</label>
+                                    <div class="input-group">
+                                        <input type="url" class="form-control" id="editPosterUrl" placeholder="Enter poster URL">
+                                        <button class="btn btn-primary" type="button" onclick="fetchPosterFromUrl()">Fetch</button>
+                                    </div>
+                                    <div class="form-text">Enter a direct image URL to fetch the poster</div>
+                                    <div id="posterUrlPreview" class="poster-url-preview" style="display: none;">
+                                        <img id="posterUrlPreviewImg" src="" alt="Poster preview">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Current Poster</label>
+                                <img id="currentPoster" src="" alt="Current Poster" 
+                                     style="width: 100px; height: 150px; object-fit: cover; border-radius: 5px;">
+                            </div>
+                        </div>
+                        
+                        <!-- Series Edit Section -->
+                        <div id="seriesEditContainer" style="display: none;">
+                            <h4>Seasons and Episodes</h4>
+                            <div id="seriesEditContent">
+                                <!-- Populated by JavaScript -->
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-warning" onclick="updateMedia()">
+                        <i class="bi bi-save"></i> Update Media
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active Users Modal -->
+    <div class="modal fade" id="activeUsersModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content bg-dark">
+                <div class="modal-header">
+                    <h5 class="modal-title">Active Users</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="activeUsersContent">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification element -->
+    <div id="notification" class="notification"></div>
+    
+    <!-- Fetching overlay -->
+    <div id="fetchingOverlay" class="fetching-overlay" style="display: none;">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="fetching-message">Fetching links, please wait...</div>
+        <div class="fetching-progress" id="fetchingProgress">Starting...</div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script>
+        let cropper;
+        
+        // Notification function
+        function showNotification(message, type = 'success', duration = 5000) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, duration);
+        }
+        
+        // Show/hide fetching overlay
+        function showFetchingOverlay(show) {
+            const overlay = document.getElementById('fetchingOverlay');
+            overlay.style.display = show ? 'flex' : 'none';
+        }
+        
+        // Update fetching progress
+        function updateFetchingProgress(message) {
+            document.getElementById('fetchingProgress').textContent = message;
+        }
+        
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all sidebar items
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Add active class to clicked sidebar item
+            event.currentTarget.classList.add('active');
+            
+            // Load support requests if requests section is shown
+            if (sectionId === 'requests') {
+                loadSupportRequests();
+            }
+        }
+        
+        function updateAddButton() {
+            const selectedTag = document.getElementById('selectedTag').value;
+            const mediaForm = document.getElementById('mediaForm');
+            const tagLabel = document.getElementById('tagLabel');
+            const seriesOptions = document.getElementById('seriesOptions');
+            const movieOptions = document.getElementById('movieOptions');
+            const tvShowSearchRow = document.getElementById('tvShowSearchRow');
+            
+            if (selectedTag) {
+                mediaForm.style.display = 'block';
+                tagLabel.textContent = selectedTag;
+                
+                // Show series options for TV Show and Web Series
+                if (selectedTag === 'TV Show' || selectedTag === 'Web Series') {
+                    seriesOptions.style.display = 'block';
+                    movieOptions.style.display = 'none';
+                    tvShowSearchRow.style.display = 'flex';
+                } else {
+                    seriesOptions.style.display = 'none';
+                    movieOptions.style.display = 'block';
+                    tvShowSearchRow.style.display = 'none';
+                }
+            } else {
+                mediaForm.style.display = 'none';
+                tvShowSearchRow.style.display = 'none';
+            }
+        }
+        
+        function generateSeasonsForm() {
+            const numSeasons = parseInt(document.getElementById('numSeasons').value);
+            const seasonsForm = document.getElementById('seasonsForm');
+            
+            let html = '';
+            for (let i = 1; i <= numSeasons; i++) {
+                html += `
+                    <div class="season-item">
+                        <h5>Season ${i}</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Number of Episodes</label>
+                                <input type="number" class="form-control num-episodes" data-season="${i}" min="1" value="1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-primary d-block w-100" onclick="generateEpisodesForm(${i})">Generate Episodes Form</button>
+                            </div>
+                        </div>
+                        <div class="episodes-container" id="episodes-season-${i}">
+                            <!-- Episodes will be added here -->
+                        </div>
+                    </div>
+                `;
+            }
+            
+            seasonsForm.innerHTML = html;
+        }
+        
+        function generateEpisodesForm(seasonNum) {
+            const numEpisodes = parseInt(document.querySelector(`.num-episodes[data-season="${seasonNum}"]`).value);
+            const episodesContainer = document.getElementById(`episodes-season-${seasonNum}`);
+            
+            let html = '';
+            for (let i = 1; i <= numEpisodes; i++) {
+                html += `
+                    <div class="episode-item">
+                        <div>
+                            <strong>Episode ${i}</strong>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control episode-title" placeholder="Episode Title" style="width: 200px; display: inline-block;">
+                            <input type="url" class="form-control episode-url" placeholder="Episode URL or #" style="width: 300px; display: inline-block; margin-left: 10px;" required>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            episodesContainer.innerHTML = html;
+        }
+        
+        function createTag() {
+            const newTag = document.getElementById('newTag').value;
+            if (newTag) {
+                fetch('/admin/create-tag', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({tag: newTag})
+                }).then(() => {
+                    showNotification('Tag created successfully!');
+                    location.reload();
+                });
+            }
+        }
+        
+        function createUser() {
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const email = document.getElementById('newEmail').value;
+            const isAdmin = document.getElementById('isAdmin').checked;
+            
+            if (username && password) {
+                fetch('/admin/create-user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password, email, is_admin: isAdmin})
+                }).then(response => {
+                    if (response.ok) {
+                        showNotification('User created successfully!');
+                        location.reload();
+                    } else {
+                        showNotification('Failed to create user', 'error');
+                    }
+                });
+            }
+        }
+        
+        function toggleUserStatus(username) {
+            fetch(`/admin/toggle-user-status/${username}`, {
+                method: 'PUT'
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('User status updated successfully!');
+                    location.reload();
+                } else {
+                    showNotification('Failed to update user status', 'error');
+                }
+            });
+        }
+        
+        function deleteUser(username) {
+            if (confirm(`Are you sure you want to delete user: ${username}?`)) {
+                fetch(`/admin/delete-user/${username}`, {
+                    method: 'DELETE'
+                }).then(() => {
+                    showNotification('User deleted successfully!');
+                    location.reload();
+                });
+            }
+        }
+        
+        // TV Show Search
+        function searchTvShow() {
+            const query = document.getElementById('tvShowSearchQuery').value;
+            if (!query) return;
+            
+            fetch('/admin/search-tmdb-tv', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query: query})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('tvShowSearchResults');
+                if (data.results && data.results.length > 0) {
+                    let html = '';
+                    data.results.forEach(show => {
+                        html += `
+                            <div class="tmdb-result-item" onclick="selectTvShow(${show.id}, '${show.name.replace(/'/g, "\\'")}', ${show.first_air_date ? new Date(show.first_air_date).getFullYear() : '""'})">
+                                <div class="tmdb-result-title">${show.name} (${show.first_air_date ? new Date(show.first_air_date).getFullYear() : 'N/A'})</div>
+                                <div class="tmdb-result-overview">${show.overview.substring(0, 100)}...</div>
+                            </div>
+                        `;
+                    });
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = '<div class="alert alert-warning">No results found</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('tvShowSearchResults').innerHTML = '<div class="alert alert-danger">Error searching TMDB</div>';
+            });
+        }
+        
+        function selectTvShow(tvId, name, year) {
+            // Fill in the media name and year
+            document.getElementById('mediaName').value = name;
+            document.getElementById('mediaYear').value = year;
+            
+            // Fetch detailed information and generate seasons form
+            fetch('/admin/get-tmdb-tv-details', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({tv_id: tvId})
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Set the number of seasons
+                document.getElementById('numSeasons').value = data.number_of_seasons;
+                
+                // Generate the seasons form
+                generateSeasonsForm();
+                
+                // For each season, generate the episodes form
+                for (let i = 1; i <= data.number_of_seasons; i++) {
+                    // We'll generate the episodes form for each season
+                    // But note: the generateEpisodesForm function is called per season
+                    // We need to wait for the seasons form to be generated, then generate episodes for each season
+                    // We can do this by calling generateEpisodesForm for each season after a delay
+                    setTimeout(() => {
+                        generateEpisodesForm(i);
+                    }, 100 * i);
+                }
+                
+                // Hide the search results
+                document.getElementById('tvShowSearchResults').innerHTML = '';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // Add media form submission
+        document.getElementById('addMediaForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const selectedTag = document.getElementById('selectedTag').value;
+            const mediaName = document.getElementById('mediaName').value;
+            const mediaYear = document.getElementById('mediaYear').value;
+            const imdbId = document.getElementById('imdbId').value;
+            const tmdbId = document.getElementById('tmdbId').value;
+            const useEmbeddedLink = document.getElementById('useEmbeddedLink').checked;
+            
+            let formData = {
+                tag: selectedTag,
+                name: mediaName,
+                year: mediaYear,
+                imdb_id: imdbId,
+                tmdb_id: tmdbId,
+                use_embedded_link: useEmbeddedLink
+            };
+            
+            // Handle different media types
+            if (selectedTag === 'TV Show' || selectedTag === 'Web Series') {
+                // Process series data
+                const seasons = [];
+                const seasonItems = document.querySelectorAll('.season-item');
+                
+                // Show fetching overlay
+                showFetchingOverlay(true);
+                updateFetchingProgress('Processing seasons...');
+                
+                for (let i = 0; i < seasonItems.length; i++) {
+                    const seasonItem = seasonItems[i];
+                    const seasonNum = i + 1;
+                    const episodes = [];
+                    const episodeItems = seasonItem.querySelectorAll('.episode-item');
+                    
+                    updateFetchingProgress(`Processing Season ${seasonNum}...`);
+                    
+                    for (let j = 0; j < episodeItems.length; j++) {
+                        const episodeItem = episodeItems[j];
+                        const title = episodeItem.querySelector('.episode-title').value || `Episode ${j + 1}`;
+                        let url = episodeItem.querySelector('.episode-url').value;
+                        
+                        if (url) {
+                            // If using embedded link, don't resolve
+                            if (!useEmbeddedLink && (url.includes('streamtape.com') || url.includes('strtape.tech'))) {
+                                updateFetchingProgress(`Fetching link for S${seasonNum}E${j + 1}...`);
+                                
+                                try {
+                                    const response = await fetch('/admin/resolve-streamtape', {
+                                        method: 'POST',
+                                        headers: {'Content-Type': 'application/json'},
+                                        body: JSON.stringify({url: url})
+                                    });
+                                    
+                                    if (response.ok) {
+                                        const data = await response.json();
+                                        url = data.resolved_url;
+                                    }
+                                    
+                                    // Add delay between episode fetches
+                                    if (j < episodeItems.length - 1) {
+                                        updateFetchingProgress(`Waiting before next episode...`);
+                                        await new Promise(resolve => setTimeout(resolve, 10000)); // 10 seconds delay
+                                    }
+                                } catch (error) {
+                                    console.error('Error resolving Streamtape URL:', error);
+                                }
+                            }
+                            
+                            episodes.push({
+                                episode_number: j + 1,
+                                title: title,
+                                url: url
+                            });
+                        }
+                    }
+                    
+                    if (episodes.length > 0) {
+                        seasons.push({
+                            season_number: seasonNum,
+                            episodes: episodes
+                        });
+                    }
+                }
+                
+                formData.type = 'series';
+                formData.seasons = seasons;
+                
+                // Hide fetching overlay
+                showFetchingOverlay(false);
+            } else {
+                // Process movie data
+                let url = document.getElementById('mediaUrl').value;
+                
+                // If using embedded link, don't resolve
+                if (!useEmbeddedLink && (url.includes('streamtape.com') || url.includes('strtape.tech'))) {
+                    showFetchingOverlay(true);
+                    updateFetchingProgress('Fetching movie link...');
+                    
+                    try {
+                        const response = await fetch('/admin/resolve-streamtape', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({url: url})
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            url = data.resolved_url;
+                        }
+                    } catch (error) {
+                        console.error('Error resolving Streamtape URL:', error);
+                    }
+                    
+                    showFetchingOverlay(false);
+                }
+                
+                formData.type = 'movie';
+                formData.url = url;
+            }
+            
+            fetch('/admin/add-media', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('Media added successfully!');
+                    document.getElementById('addMediaForm').reset();
+                    updateAddButton();
+                } else {
+                    showNotification('Failed to add media', 'error');
+                }
+            });
+        });
+        
+        function filterMedia() {
+            const selectedTag = document.getElementById('filterTag').value;
+            const rows = document.querySelectorAll('#mediaTableBody tr');
+            
+            rows.forEach(row => {
+                const rowTag = row.getAttribute('data-tag');
+                if (selectedTag === '' || rowTag === selectedTag) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        
+        function editMedia(mediaId) {
+            // Fetch media data
+            fetch(`/admin/get-media/${mediaId}`)
+                .then(response => response.json())
+                .then(media => {
+                    document.getElementById('editMediaId').value = mediaId;
+                    document.getElementById('editMediaName').value = media.name;
+                    document.getElementById('editMediaYear').value = media.year;
+                    document.getElementById('editMediaTag').value = media.tag;
+                    document.getElementById('editMediaUrl').value = media.original_url || media.url;
+                    document.getElementById('editImdbId').value = media.imdb_id || '';
+                    document.getElementById('editTmdbId').value = media.tmdb_id || '';
+                    document.getElementById('editUseEmbeddedLink').checked = media.use_embedded_link || false;
+                    document.getElementById('currentPoster').src = media.poster;
+                    
+                    // Initialize poster cropper
+                    const posterUpload = document.getElementById('editPosterUpload');
+                    posterUpload.addEventListener('change', function(e) {
+                        if (e.target.files && e.target.files[0]) {
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                const cropperContainer = document.getElementById('posterCropperContainer');
+                                const cropperImage = document.getElementById('posterCropperImage');
+                                
+                                cropperContainer.style.display = 'block';
+                                cropperImage.src = event.target.result;
+                                
+                                // Destroy existing cropper if it exists
+                                if (cropper) {
+                                    cropper.destroy();
+                                }
+                                
+                                // Initialize new cropper
+                                cropper = new Cropper(cropperImage, {
+                                    aspectRatio: 2/3,
+                                    viewMode: 1,
+                                    autoCropArea: 0.8,
+                                    responsive: true,
+                                    checkCrossOrigin: false
+                                });
+                            };
+                            reader.readAsDataURL(e.target.files[0]);
+                        }
+                    });
+                    
+                    // Handle series data
+                    if (media.type === 'series') {
+                        const seriesContainer = document.getElementById('seriesEditContainer');
+                        const seriesContent = document.getElementById('seriesEditContent');
+                        
+                        seriesContainer.style.display = 'block';
+                        
+                        let html = '';
+                        media.seasons.forEach(season => {
+                            html += `
+                                <div class="season-item mb-4">
+                                    <h5>Season ${season.season_number}</h5>
+                                    <div class="episodes-list">
+                            `;
+                            
+                            season.episodes.forEach(episode => {
+                                html += `
+                                    <div class="episode-item mb-2">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-4">
+                                                <strong>Episode ${episode.episode_number}: ${episode.title}</strong>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <input type="url" class="form-control episode-url" value="${episode.url}" placeholder="Episode URL or #">
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            
+                            html += `
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        seriesContent.innerHTML = html;
+                    } else {
+                        document.getElementById('seriesEditContainer').style.display = 'none';
+                    }
+                    
+                    new bootstrap.Modal(document.getElementById('editMediaModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error fetching media data:', error);
+                    showNotification('Failed to load media data', 'error');
+                });
+        }
+        
+        function updateMedia() {
+            const mediaId = document.getElementById('editMediaId').value;
+            const formData = {
+                name: document.getElementById('editMediaName').value,
+                year: parseInt(document.getElementById('editMediaYear').value),
+                tag: document.getElementById('editMediaTag').value,
+                url: document.getElementById('editMediaUrl').value,
+                imdb_id: document.getElementById('editImdbId').value,
+                tmdb_id: document.getElementById('editTmdbId').value,
+                use_embedded_link: document.getElementById('editUseEmbeddedLink').checked
+            };
+            
+            // Check if it's a series
+            const seriesContainer = document.getElementById('seriesEditContainer');
+            if (seriesContainer.style.display !== 'none') {
+                formData.type = 'series';
+                formData.seasons = [];
+                
+                const seasonItems = seriesContainer.querySelectorAll('.season-item');
+                seasonItems.forEach(seasonItem => {
+                    const seasonNumber = parseInt(seasonItem.querySelector('h5').textContent.replace('Season ', ''));
+                    const episodes = [];
+                    const episodeItems = seasonItem.querySelectorAll('.episode-item');
+                    
+                    episodeItems.forEach(episodeItem => {
+                        const episodeNumber = parseInt(episodeItem.querySelector('strong').textContent.split(':')[0].replace('Episode ', ''));
+                        const title = episodeItem.querySelector('strong').textContent.split(': ')[1];
+                        const url = episodeItem.querySelector('.episode-url').value;
+                        
+                        episodes.push({
+                            episode_number: episodeNumber,
+                            title: title,
+                            url: url
+                        });
+                    });
+                    
+                    formData.seasons.push({
+                        season_number: seasonNumber,
+                        episodes: episodes
+                    });
+                });
+            }
+            
+            // Check if a custom poster was uploaded and cropped
+            if (cropper) {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 300,
+                    height: 450
+                });
+                
+                if (canvas) {
+                    canvas.toBlob(function(blob) {
+                        const reader = new FileReader();
+                        reader.onloadend = function() {
+                            formData.poster_data = reader.result.split(',')[1]; // Base64 without prefix
+                            sendUpdateRequest(mediaId, formData);
+                        };
+                        reader.readAsDataURL(blob);
+                    });
+                } else {
+                    sendUpdateRequest(mediaId, formData);
+                }
+            } else {
+                sendUpdateRequest(mediaId, formData);
+            }
+        }
+        
+        function sendUpdateRequest(mediaId, formData) {
+            fetch(`/admin/update-media/${mediaId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(formData)
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('Media updated successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('editMediaModal')).hide();
+                    location.reload();
+                } else {
+                    showNotification('Failed to update media', 'error');
+                }
+            });
+        }
+        
+        function deleteMedia(mediaId, mediaName) {
+            if (confirm(`Are you sure you want to delete "${mediaName}"?`)) {
+                fetch(`/admin/delete-media/${mediaId}`, {
+                    method: 'DELETE'
+                }).then(response => {
+                    if (response.ok) {
+                        showNotification('Media deleted successfully!');
+                        location.reload();
+                    } else {
+                        showNotification('Failed to delete media', 'error');
+                    }
+                });
+            }
+        }
+        
+        // System settings
+        function saveSystemSettings() {
+            const registrationEnabled = document.getElementById('registrationEnabled').checked;
+            const contactSupportEnabled = document.getElementById('contactSupportEnabled').checked;
+            
+            fetch('/admin/save-system-settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    registration_enabled: registrationEnabled,
+                    contact_support_enabled: contactSupportEnabled
+                })
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('System settings saved successfully!');
+                } else {
+                    showNotification('Failed to save system settings', 'error');
+                }
+            });
+        }
+        
+        // SMTP settings
+        function saveSmtpSettings() {
+            const smtpEnabled = document.getElementById('smtpEnabled').checked;
+            const smtpHost = document.getElementById('smtpHost').value;
+            const smtpPort = document.getElementById('smtpPort').value;
+            const smtpUseTLS = document.getElementById('smtpUseTLS').checked;
+            const smtpUsername = document.getElementById('smtpUsername').value;
+            const smtpPassword = document.getElementById('smtpPassword').value;
+            const smtpFromEmail = document.getElementById('smtpFromEmail').value;
+            
+            fetch('/admin/save-smtp-settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    enabled: smtpEnabled,
+                    host: smtpHost,
+                    port: smtpPort,
+                    use_tls: smtpUseTLS,
+                    username: smtpUsername,
+                    password: smtpPassword,
+                    from_email: smtpFromEmail
+                })
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('SMTP settings saved successfully!');
+                    // Show/hide SMTP config based on enabled state
+                    document.getElementById('smtpConfig').style.display = smtpEnabled ? 'block' : 'none';
+                } else {
+                    showNotification('Failed to save SMTP settings', 'error');
+                }
+            });
+        }
+        
+        // DNS settings
+        function saveDnsSettings() {
+            const dnsSetting = document.getElementById('dnsSetting').value;
+            
+            fetch('/admin/save-dns-settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({dns: dnsSetting})
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('DNS settings saved successfully! Reloading page to apply changes...');
+                    // Reload page to apply DNS changes
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    showNotification('Failed to save DNS settings', 'error');
+                }
+            });
+        }
+        
+        // Caching settings
+        function saveCachingSettings() {
+            const cachingEnabled = document.getElementById('cachingEnabled').checked;
+            
+            fetch('/admin/save-caching-settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({caching_enabled: cachingEnabled})
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('Caching settings saved successfully!');
+                    // Reload page to apply caching changes
+                    location.reload();
+                } else {
+                    showNotification('Failed to save caching settings', 'error');
+                }
+            });
+        }
+        
+        // Theme settings
+        function saveThemeSettings() {
+            const selectedTheme = document.querySelector('input[name="theme"]:checked').id;
+            
+            fetch('/admin/save-theme', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({theme: selectedTheme})
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('Theme settings saved successfully!');
+                    // Apply the theme immediately
+                    if (selectedTheme === 'lightTheme') {
+                        document.body.classList.add('light-theme');
+                    } else {
+                        document.body.classList.remove('light-theme');
+                    }
+                } else {
+                    showNotification('Failed to save theme settings', 'error');
+                }
+            });
+        }
+        
+        // TMDB settings
+        function saveTmdbSettings() {
+            const tmdbApiEnabled = document.getElementById('tmdbApiEnabled').checked;
+            const tmdbApiKey = document.getElementById('tmdbApiKey').value;
+            
+            fetch('/admin/save-tmdb-settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    tmdb_api_enabled: tmdbApiEnabled,
+                    tmdb_api_key: tmdbApiKey
+                })
+            }).then(response => {
+                if (response.ok) {
+                    showNotification('TMDB settings saved successfully!');
+                    // Show/hide TMDB config based on enabled state
+                    document.getElementById('tmdbConfig').style.display = tmdbApiEnabled ? 'block' : 'none';
+                } else {
+                    showNotification('Failed to save TMDB settings', 'error');
+                }
+            });
+        }
+        
+        function testTmdbApi() {
+            const query = document.getElementById('tmdbTestQuery').value;
+            const resultDiv = document.getElementById('tmdbTestResult');
+            
+            if (!query) {
+                resultDiv.innerHTML = '<div class="alert alert-warning">Please enter a movie title</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Testing...';
+            
+            fetch('/admin/test-tmdb-api', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query: query})
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class="alert alert-success">TMDB API is working! Found: ${data.result}</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            }).catch(error => {
+                resultDiv.innerHTML = `<div class="alert alert-danger">Request failed: ${error}</div>`;
+            });
+        }
+        
+        // Active Users Modal
+        function showActiveUsers() {
+            const modal = new bootstrap.Modal(document.getElementById('activeUsersModal'));
+            modal.show();
+            loadActiveUsers();
+        }
+        
+        function loadActiveUsers() {
+            fetch('/admin/active-users')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('activeUsersContent');
+                    
+                    if (data.length === 0) {
+                        container.innerHTML = '<p class="text-center text-muted">No active users found</p>';
+                        return;
+                    }
+                    
+                    let html = '<div class="table-responsive"><table class="table table-dark table-hover">';
+                    html += '<thead><tr><th>Username</th><th>Status</th><th>Current Activity</th><th>Last Activity</th></tr></thead><tbody>';
+                    
+                    data.forEach(user => {
+                        const statusClass = user.is_active ? 'status-active' : 'status-inactive';
+                        const statusText = user.is_active ? 'Active' : 'Inactive';
+                        const activityText = user.current_media ? `Watching "${user.current_media}"` : 'Not watching any media';
+                        
+                        html += `<tr>
+                            <td>${user.username}</td>
+                            <td><span class="user-status ${statusClass}"></span> ${statusText}</td>
+                            <td>${activityText}</td>
+                            <td>${user.last_activity}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading active users:', error);
+                    document.getElementById('activeUsersContent').innerHTML = '<p class="text-danger">Error loading active users</p>';
+                });
+        }
+        
+        // Support requests
+        function loadSupportRequests() {
+            if (!document.getElementById('contactSupportEnabled').checked) {
+                document.getElementById('supportRequests').innerHTML = '<div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> To use this feature, please turn on contact support in settings.</div>';
+                return;
+            }
+            
+            fetch('/admin/support-requests')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('supportRequests');
+                    
+                    if (data.length === 0) {
+                        container.innerHTML = '<p class="text-center text-muted">No support requests found</p>';
+                        return;
+                    }
+                    
+                    let html = '';
+                    data.forEach(request => {
+                        html += `
+                            <div class="support-request">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>${request.username}</strong>
+                                        <div class="mt-2">${request.message}</div>
+                                    </div>
+                                    <div>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteSupportRequest('${request.id}')">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="request-time mt-2">${request.timestamp}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error loading support requests:', error);
+                    document.getElementById('supportRequests').innerHTML = '<p class="text-danger">Error loading support requests</p>';
+                });
+        }
+        
+        function deleteSupportRequest(requestId) {
+            if (confirm('Are you sure you want to delete this support request?')) {
+                fetch(`/admin/delete-support-request/${requestId}`, {
+                    method: 'DELETE'
+                }).then(response => {
+                    if (response.ok) {
+                        loadSupportRequests();
+                        showNotification('Support request deleted successfully!');
+                    } else {
+                        showNotification('Failed to delete support request', 'error');
+                    }
+                });
+            }
+        }
+        
+        // Live activity updates
+        function updateLiveActivity() {
+            fetch('/admin/live-activity')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('liveActivity');
+                    if (data.length === 0) {
+                        container.innerHTML = '<p class="text-muted">No active users</p>';
+                    } else {
+                        container.innerHTML = data.map(activity => 
+                            `<div class="activity-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>${activity.username}</strong> is watching <em>${activity.media_name}</em>
+                                    </div>
+                                    <div class="activity-time">${activity.duration}</div>
+                                </div>
+                            </div>`
+                        ).join('');
+                    }
+                });
+        }
+        
+        // Update live activity every 10 seconds
+        setInterval(updateLiveActivity, 10000);
+        updateLiveActivity(); // Initial load
+        
+        // Update users table with active status
+        function updateUsersTable() {
+            fetch('/admin/active-users')
+                .then(response => response.json())
+                .then(data => {
+                    const rows = document.querySelectorAll('#usersTableBody tr');
+                    
+                    rows.forEach(row => {
+                        const username = row.cells[0].textContent;
+                        const user = data.find(u => u.username === username);
+                        
+                        if (user) {
+                            const statusCell = row.cells[3];
+                            const statusClass = user.is_active ? 'status-active' : 'status-inactive';
+                            const statusText = user.is_active ? 'Active' : 'Inactive';
+                            
+                            statusCell.innerHTML = `<span class="user-status ${statusClass}"></span> ${statusText}`;
+                        }
+                    });
+                });
+        }
+        
+        // Update users table every 30 seconds
+        setInterval(updateUsersTable, 30000);
+        updateUsersTable(); // Initial load
+        
+        // Fetch poster from URL function
+        function fetchPosterFromUrl() {
+            const url = document.getElementById('editPosterUrl').value.trim();
+            if (!url) {
+                showNotification('Please enter a poster URL', 'error');
+                return;
+            }
+
+            // Show loading state
+            const fetchButton = event.target;
+            const originalText = fetchButton.innerHTML;
+            fetchButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Fetching...';
+            fetchButton.disabled = true;
+
+            // Fetch the image from URL
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Convert blob to data URL
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(blob);
+                    });
+                })
+                .then(dataUrl => {
+                    // Update the current poster preview
+                    document.getElementById('currentPoster').src = dataUrl;
+                    
+                    // Show the URL preview
+                    document.getElementById('posterUrlPreview').style.display = 'block';
+                    document.getElementById('posterUrlPreviewImg').src = dataUrl;
+                    
+                    // Initialize cropper with the fetched image
+                    const cropperContainer = document.getElementById('posterCropperContainer');
+                    const cropperImage = document.getElementById('posterCropperImage');
+                    
+                    cropperContainer.style.display = 'block';
+                    cropperImage.src = dataUrl;
+                    
+                    // Destroy existing cropper if it exists
+                    if (cropper) {
+                        cropper.destroy();
+                    }
+                    
+                    // Initialize new cropper
+                    cropper = new Cropper(cropperImage, {
+                        aspectRatio: 2/3,
+                        viewMode: 1,
+                        autoCropArea: 1,
+                        responsive: true,
+                        checkCrossOrigin: false
+                    });
+                    
+                    showNotification('Poster fetched successfully!');
+                })
+                .catch(error => {
+                    console.error('Error fetching poster:', error);
+                    showNotification('Failed to fetch poster. Please check the URL and try again.', 'error');
+                })
+                .finally(() => {
+                    // Reset button state
+                    fetchButton.innerHTML = originalText;
+                    fetchButton.disabled = false;
+                });
+        }
+    </script>
+</body>
+</html>

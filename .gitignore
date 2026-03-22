@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+users.json
+activity.json
+otp.json
+media.json
+settings.json
+tags.json
+support_requests.json
